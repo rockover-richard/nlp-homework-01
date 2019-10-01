@@ -38,19 +38,6 @@ def replace_unk(w_list, w_dict):
     return w_list
 
 
-def bigram_count(w_list):
-    bigrams = {}
-    for i in range(1, len(w_list)):
-        if w_list[i] == '<s>':
-            continue
-        else:
-            if (w_list[i-1], w_list[i]) not in bigrams:
-                bigrams[(w_list[i-1], w_list[i])] = 1
-            elif (w_list[i-1], w_list[i]) in bigrams:
-                bigrams[(w_list[i-1], w_list[i])] += 1
-    return bigrams
-
-
 # s_list = []
 # for ind, line in enumerate(file):
 #     s_list.append(line.split())
