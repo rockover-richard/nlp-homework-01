@@ -4,51 +4,68 @@ Preprocessing functions for Assignment 1
 '''
 
 
-# Adds the start of sentence and end of sentence tags
+def sentence_preprocess(s, lst=[]):
+    lst.append('<s>')
+    for token in s.split():
+        lst.append(token.lower())
+    lst.append('</s>')
+    return lst
+
+
+# Adds the start of sentence and end of sentence tags of txt file
 def add_s_tag(filepath):
     file = open(filepath, 'r')
-    w_list = []
+    lst = []
+
     for line in file:
-        w_list.append('<s>')
-        for word in line.split():
-            w_list.append(word.lower())
-        w_list.append('</s>')
+        sentence_preprocess(line, lst)
+
     file.close()
-    return w_list
+    return lst
 
 
 # Builds a python dictionary with counts
-def build_dict(w_list):
-    w_dict = {}
-    for word in w_list:
-        if word not in w_dict:
-            w_dict[word] = 1
-        elif word in w_dict:
-            w_dict[word] += 1
-    return w_dict
+def build_dict(lst):
+    dct = {}
+    for token in lst:
+        if token not in dct:
+            dct[token] = 1
+        elif token in dct:
+            dct[token] += 1
+    print('Dictionary Built!')
+    return dct
 
 
-# Replaces words that occur once in the corpus with <unk>
-def replace_unk(w_list, w_dict):
-    for i, word in enumerate(w_list):
-        if w_dict[word] == 1:
-            w_list[i] = '<unk>'
-        else:
-            continue
-    return w_list
+# Replaces words that occur once in the corpus with <unk> token
+def unkify_train(train_list, train_dict):
+    for i, token in enumerate(train_list):
+        if train_dict[token] == 1:
+            train_list[i] = '<unk>'
+    return train_list
 
 
-# s_list = []
-# for ind, line in enumerate(file):
-#     s_list.append(line.split())
-#     w_list.append('<s>')
-#     for i, word in enumerate(s_list[ind]):
-#         s_list[ind][i] = word.lower()
-#         w_list.append(word.lower())
-#     s_list[ind].insert(0, '<s>')
-#     s_list[ind].append('</s>')
-#     w_list.append('</s>')
-#     if ind == 2:
-#         break
+# Replaces unseen words in test set with <unk> token
+def unkify_test(test_list, train_dict):
+    for i, token in enumerate(test_list):
+        if token not in train_dict:
+            test_list[i] = '<unk>'
+    return test_list
 
-# print(s_list)
+
+# Complete preprocessing for training data
+def preprocess_train(filepath):
+    lst = add_s_tag(filepath)
+    dct = build_dict(lst)
+    unk_list = unkify_train(lst, dct)
+
+    print('Preprocessing Complete!')
+    return unk_list
+
+
+# Complete preprocessing for test data
+def preprocess_test(filepath, train_dict):
+    lst = add_s_tag(filepath)
+    unk_list = unkify_test(lst, train_dict)
+
+    print('Preprocessing Complete!')
+    return unk_list

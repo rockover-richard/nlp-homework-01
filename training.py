@@ -1,13 +1,3 @@
-import preprocessing
-
-
-train_fp = 'data/brown-small.txt'
-w_list = preprocessing.add_s_tag(train_fp)
-w_dict = preprocessing.build_dict(w_list)
-w_list_unk = preprocessing.replace_unk(w_list, w_dict)
-w_dict_unk = preprocessing.build_dict(w_list_unk)
-w_count = len(w_list_unk)
-
 '''
 Unigram Maximum Likelihood Model
 '''
@@ -23,8 +13,6 @@ def unigram_train(lst, dct):
     for token in lst:
         if token not in unigram_dict:
             unigram_dict[token] = unigram_prob(token, dct, len_list)
-        else:
-            continue
     return unigram_dict
 
 
@@ -33,20 +21,26 @@ Bigram Maximum Likelihood Model
 '''
 
 
-def bigram_count(lst):
+def bigrams(lst):
+    bigram_list = []
+    for i in range(len(lst)-1):
+        if lst[i] != '</s>':
+            bigram_list.append((lst[i], lst[i+1]))
+    return bigram_list
+
+
+def bigram_dict(lst):
     bigram_dict = {}
     for i in range(1, len(lst)):
         if lst[i] == '<s>':
             continue
-        else:
-            if (lst[i-1], lst[i]) not in bigram_dict:
-                bigram_dict[(lst[i-1], lst[i])] = 1
-            elif (lst[i-1], lst[i]) in bigram_dict:
-                bigram_dict[(lst[i-1], lst[i])] += 1
+        elif (lst[i-1], lst[i]) not in bigram_dict:
+            bigram_dict[(lst[i-1], lst[i])] = 1
+        elif (lst[i-1], lst[i]) in bigram_dict:
+            bigram_dict[(lst[i-1], lst[i])] += 1
     return bigram_dict
 
 
-# bigram_counts = bigram_count(w_list_unk)
 def bigram_prob(bigram_counts, prior, target, dct):
     return float(bigram_counts[(prior, target)])/dct[prior]
 
@@ -56,12 +50,9 @@ def bigram_train(bigram_counts, lst, dct):
     for i in range(1, len(lst)):
         if lst[i] == '<s>':
             continue
-        else:
-            if (lst[i-1], lst[i]) not in bigram_probs:
-                bigram_probs[(lst[i-1], lst[i])] = (
-                    bigram_prob(bigram_counts, lst[i-1], lst[i], dct))
-            # elif (lst[i-1], lst[i]) in bigram_probs:
-            #     continue
+        elif (lst[i-1], lst[i]) not in bigram_probs:
+            bigram_probs[(lst[i-1], lst[i])] = (
+                bigram_prob(bigram_counts, lst[i-1], lst[i], dct))
     return bigram_probs
 
 
@@ -80,84 +71,69 @@ def add_one_train(bigram_counts, lst, dct, len_dict):
     for i in range(1, len(lst)):
         if lst[i] == '<s>':
             continue
-        else:
-            if (lst[i-1], lst[i]) not in add_one_probs:
-                add_one_probs[(lst[i-1], lst[i])] = (add_one_prob(
-                    bigram_counts, lst[i-1], lst[i], dct, len_dict))
-            # elif (lst[i-1], lst[i]) in add_one_probs:
-            #     continue
+        elif (lst[i-1], lst[i]) not in add_one_probs:
+            add_one_probs[(lst[i-1], lst[i])] = (add_one_prob(
+                bigram_counts, lst[i-1], lst[i], dct, len_dict))
     return add_one_probs
 
 
 '''
-Bigram Model with Discounting and Katz backoff
+Bigram Model with Discounting and Katz Backoff
 '''
 
 
-# # katz_A = preprocessing.build_dict(preprocessing.add_s_tag(w_list))
-# def dc_katz_A(katz_A):
-#     for key in katz_A:
-#         katz_A[key] -= 0.5
-#     return katz_A
-def set_A(train_list):
-    unigrams_A = {train_list[0]: 1}
+# Set A is built as a nested dictionary:
+# bigrams_A[prior][target] = counts of (prior, target)
+def build_set_A(train_list):
+    unigrams = {train_list[-1]: 1}
     bigrams_A = {}
 
-    for i in range(1, len(train_list)):
-        if train_list[i] not in unigrams_A:
-            unigrams_A[train_list[i]] = 1
-        elif train_list[i] in unigrams_A:
-            unigrams_A[train_list[i]] += 1
+    for i in range(len(train_list)-1):
+        if train_list[i] not in unigrams:
+            unigrams[train_list[i]] = 1
+        elif train_list[i] in unigrams:
+            unigrams[train_list[i]] += 1
         if train_list[i] not in bigrams_A:
-            bigrams_A[train_list[i]] = {train_list[i-1]: 1}
+            bigrams_A[train_list[i]] = {train_list[i+1]: 1}
         elif (train_list[i] in bigrams_A and
-              train_list[i] != '<s>'):
-            if train_list[i-1] in bigrams_A[train_list[i]]:
-                bigrams_A[train_list[i]][train_list[i-1]] += 1
+              train_list[i] != '</s>'):
+            if train_list[i+1] in bigrams_A[train_list[i]]:
+                bigrams_A[train_list[i]][train_list[i+1]] += 1
             else:
-                bigrams_A[train_list[i]] = {train_list[i-1]: 1}
+                bigrams_A[train_list[i]][train_list[i+1]] = 1
 
-    return unigrams_A, bigrams_A
-
-
-# katz_A = dc_katz_A(katz_A)
-# test_list = preprocessing.add_s_tag(testfile)
-def set_B(bigrams_A, test_list):
-    unigrams_B = {}
-    bigrams_B = {}
-
-    if test_list[0] not in bigrams_A:
-        unigrams_B = {test_list[0]: 1}
-
-    for i in range(1, len(test_list)):
-        if test_list[i] in bigrams_A:
-            continue
-        elif test_list[i] not in bigrams_A:
-            if test_list[i] not in bigrams_B:
-                unigrams_B[test_list[i]] = 1
-                bigrams_B[test_list[i]] = {test_list[i-1]: 1}
-            elif test_list[i] in bigrams_B:
-                unigrams_B[test_list[i]] += 1
-                if (test_list[i-1] not in bigrams_B[test_list[i]] and
-                        test_list[i] != '<s>'):
-                    bigrams_B[test_list[i]] = {test_list[i-1]: 1}
-                elif test_list[i-1] in bigrams_B[test_list[i]]:
-                    bigrams_B[test_list[i]][test_list[i-1]] += 1
-
-    return unigrams_B, bigrams_B
+    return unigrams, bigrams_A
 
 
-def katz_alpha(prior, bigrams_A, unigram_counts, discount=0.5):
+def katz_alpha(prior, bigrams_A, unigrams, discount=0.5):
     dc_sum = 0
+
     for key in bigrams_A:
-        if key[0] == prior:
-            dc_sum += bigrams_A[key] - discount
-    return 1 - dc_sum/unigram_counts[prior]
+        if key == prior:
+            for token in bigrams_A[key]:
+                dc_sum += bigrams_A[key][token] - discount
+
+    return 1 - dc_sum/unigrams[prior]
 
 
-def katz_backoff(prior, target, bigrams_A, unigrams_A, bigrams_B, unigrams_B):
-    if target in bigrams_A:
-        return (bigrams_A[target][prior] - 0.5)/unigrams_A[prior]
+def katz_backoff_prob(prior, target, unigrams, bigrams_A, len_list):
+    if prior in bigrams_A:
+        return (bigrams_A[prior][target] - 0.5)/unigrams[prior]
     else:
-        alpha = katz_alpha(prior, bigrams_A, unigrams_B)
-        return alpha * (float(unigrams_B[target])/sum(unigrams_B.values()))
+        prob_mass_B = len_list - sum(bigrams_A[prior].values()) - 1
+        return (katz_alpha(prior, bigrams_A, unigrams) *
+                (float(unigrams[target]) / prob_mass_B))
+
+
+def katz_backoff(lst, unigrams, bigrams_A, len_list):
+    katz_probs = {}
+    for i, token in enumerate(lst):
+        if token == '<s>':
+            continue
+        else:
+            katz_probs[(lst[i-1], token)] = katz_backoff_prob(lst[i-1],
+                                                              token,
+                                                              unigrams,
+                                                              bigrams_A,
+                                                              len_list)
+    return katz_probs
