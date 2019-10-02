@@ -21,6 +21,7 @@ Bigram Maximum Likelihood Model
 '''
 
 
+# creates a list of bigrams from a token list
 def bigrams(lst):
     bigram_list = []
     for i in range(len(lst)-1):
@@ -29,6 +30,7 @@ def bigrams(lst):
     return bigram_list
 
 
+# creates a list of bigram counts from a token list
 def bigram_dict(lst):
     bigram_dict = {}
     for i in range(1, len(lst)):
@@ -61,7 +63,7 @@ Bigram Model with Add-One Smoothing
 '''
 
 
-# len_dict = len(bigram_count(w_list_unk))
+# len_dict is the vocabulary size of tokens
 def add_one_prob(bigram_counts, prior, target, dct, len_dict):
     return float((bigram_counts[(prior, target)]+1))/(dct[prior]+len_dict)
 
@@ -84,6 +86,7 @@ Bigram Model with Discounting and Katz Backoff
 
 # Set A is built as a nested dictionary:
 # bigrams_A[prior][target] = counts of (prior, target)
+# also builds the unigram counts
 def build_set_A(train_list):
     unigrams = {train_list[-1]: 1}
     bigrams_A = {}
@@ -116,6 +119,9 @@ def katz_alpha(prior, bigrams_A, unigrams, discount=0.5):
     return 1 - dc_sum/unigrams[prior]
 
 
+# The probability mass of B is calculated as
+# The count of all tokens (len_list) -
+# count of all instances of set A - 1 (the word itself)
 def katz_backoff_prob(prior, target, unigrams, bigrams_A, len_list):
     if prior in bigrams_A:
         return (bigrams_A[prior][target] - 0.5)/unigrams[prior]

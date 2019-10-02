@@ -1,5 +1,5 @@
 '''
-Preprocessing functions for Assignment 1
+Preprocessing functions
 
 '''
 
@@ -13,6 +13,7 @@ def sentence_preprocess(s, lst=[]):
 
 
 # Adds the start of sentence and end of sentence tags of txt file
+# This function creates a list
 def add_s_tag(filepath):
     file = open(filepath, 'r')
     lst = []
@@ -32,7 +33,6 @@ def build_dict(lst):
             dct[token] = 1
         elif token in dct:
             dct[token] += 1
-    print('Dictionary Built!')
     return dct
 
 
@@ -58,7 +58,6 @@ def preprocess_train(filepath):
     dct = build_dict(lst)
     unk_list = unkify_train(lst, dct)
 
-    print('Preprocessing Complete!')
     return unk_list
 
 
@@ -67,5 +66,4 @@ def preprocess_test(filepath, train_dict):
     lst = add_s_tag(filepath)
     unk_list = unkify_test(lst, train_dict)
 
-    print('Preprocessing Complete!')
     return unk_list

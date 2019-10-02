@@ -49,3 +49,35 @@ def build_set_B(bigrams_A, train_list):
         print(i, end=" ")
 
     return bigrams_B
+
+
+# For larger data sets
+def add_one_predict_big(filepath, add_one_probs, train_dict, len_list):
+    file = open(filepath, 'r')
+    log_prob = 0
+
+    for line in file:
+        line_list = preprocessing.sentence_preprocess(line, lst=[])
+        unk_list = preprocessing.unkify_test(line_list, train_dict)
+        line_bigrams = training.bigrams(unk_list)
+        line_prob = add_one_predict_no_print(line_bigrams, add_one_probs,
+                                             train_dict, len_list)
+        log_prob += line_prob
+
+    file.close()
+
+    return log_prob
+
+
+# Filepaths to the test data
+test_fp = 'data/brown-test.txt'
+learner_fp = 'data/learner-test.txt'
+
+# Preprocessing the training data
+test_list = preprocessing.preprocess_test(test_fp, train_dict)
+learner_list = preprocessing.preprocess_test(learner_fp, train_dict)
+
+
+'''
+Analyzing the Test Data
+'''
