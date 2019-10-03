@@ -160,7 +160,7 @@ def katz_predict(bigram_list, katz_probs, unigrams,
         if bigram in katz_probs:
             token_prob = math.log(katz_probs[bigram], 2)
             print('The Katz log probability for', bigram,
-                  'is', round(token_prob, 3))
+                  'in Set A is', round(token_prob, 3))
             log_prob += token_prob
         else:
             katz_alpha = training.katz_alpha(bigram[0], bigrams_A, unigrams)
@@ -168,7 +168,7 @@ def katz_predict(bigram_list, katz_probs, unigrams,
             token_prob = math.log(katz_alpha *
                                   unigrams[bigram[1]] / prob_mass_B)
             print('The Katz log probability for', bigram,
-                  'is', round(token_prob, 3))
+                  'in set B is', round(token_prob, 3))
             log_prob += token_prob
 
     return log_prob/len_list
