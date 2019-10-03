@@ -102,3 +102,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# tarball
+CS74040_HW1_ByungKim.tar
